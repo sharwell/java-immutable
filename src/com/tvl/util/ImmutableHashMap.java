@@ -616,7 +616,7 @@ public final class ImmutableHashMap<K, V> implements ImmutableMap<K, V>, HashKey
         }
     }
 
-    public static final class Builder<K, V> implements Map<K, V>, ReadOnlyMap<K, V> {
+    public static final class Builder<K, V> implements ImmutableMapBuilder<K, V>, Map<K, V>, ReadOnlyMap<K, V> {
         private SortedIntegerKeyNode<HashBucket<K, V>> root = SortedIntegerKeyNode.emptyNode();
         private Comparators<K, V> comparators;
         private int count;
@@ -715,11 +715,29 @@ public final class ImmutableHashMap<K, V> implements ImmutableMap<K, V>, HashKey
         }
 
         @Override
+        public void add(K key, V value) {
+            MutationResult<K, V> result = ImmutableHashMap.add(key, value, KeyCollisionBehavior.THROW_IF_VALUE_DIFFERENT, getOrigin());
+            apply(result);
+        }
+
+        @Override
+        public void add(Map.Entry<? extends K, ? extends V> entry) {
+            Requires.notNull(entry, "entry");
+            add(entry.getKey(), entry.getValue());
+        }
+
+        @Override
         public V put(K key, V value) {
             V previousValue = get(key);
             MutationResult<K, V> result = ImmutableHashMap.add(key, value, KeyCollisionBehavior.SET_VALUE, getOrigin());
             apply(result);
             return previousValue;
+        }
+
+        @Override
+        public V put(Map.Entry<? extends K, ? extends V> entry) {
+            Requires.notNull(entry, "entry");
+            return put(entry.getKey(), entry.getValue());
         }
 
         @Override
@@ -824,7 +842,16 @@ public final class ImmutableHashMap<K, V> implements ImmutableMap<K, V>, HashKey
 
             @Override
             public boolean contains(Object o) {
-                throw new UnsupportedOperationException("Not supported yet.");
+                if (!(o instanceof Map.Entry<?, ?>)) {
+                    return false;
+                }
+
+                Map.Entry<?, ?> entry = (Map.Entry<?, ?>)o;
+                if (!builder.containsKey(entry.getKey())) {
+                    return false;
+                }
+
+                return builder.getValueComparator().equals(builder.get(entry.getKey()), (V)entry.getValue());
             }
 
             @Override
@@ -849,7 +876,12 @@ public final class ImmutableHashMap<K, V> implements ImmutableMap<K, V>, HashKey
 
             @Override
             public boolean remove(Object o) {
-                throw new UnsupportedOperationException("Not supported yet.");
+                if (!contains(o)) {
+                    return false;
+                }
+
+                builder.remove(((Map.Entry<?, ?>)o).getKey());
+                return true;
             }
 
             @Override

@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Random;
+import org.hamcrest.CoreMatchers;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.rules.ExpectedException;
@@ -96,6 +97,15 @@ public abstract class ImmutablesTestBase {
 
     protected static StringComparator ordinalIgnoreCaseComparator() {
         return OrdinalIgnoreCaseStringComparator.INSTANCE;
+    }
+
+    protected static <T> void assertEquivalentSequences(Iterable<? extends T> left, Iterable<? extends T> right) {
+        ImmutableTreeList<T> leftList = ImmutableTreeList.createAll(left);
+        for (T item : right) {
+            ImmutableTreeList<T> newLeft = leftList.remove(item);
+            Assert.assertNotSame(leftList, newLeft);
+            leftList = newLeft;
+        }
     }
 
     protected static <T> void assertEqualSequences(Iterable<? extends T> left, Iterable<? extends T> right) {

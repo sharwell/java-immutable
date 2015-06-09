@@ -12,7 +12,7 @@ final class TestExtensionMethods {
         return toBuilder(map);
     }
 
-    static <K, V> Map<K, V> toBuilder(ImmutableMap<K, V> map) {
+    static <K, V> ImmutableMapBuilder<K, V> toBuilder(ImmutableMap<K, V> map) {
         Requires.notNull(map, "map");
 
         if (map instanceof ImmutableHashMap<?, ?>) {
